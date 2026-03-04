@@ -2,15 +2,17 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>寒带冬季野外生存练习</title>
+<title>寒带冬季野外生存练习 答题卡</title>
 
 <style>
-body { font-family: Arial; text-align: center; }
-table { border-collapse: collapse; margin: auto; }
-th, td { border: 1px solid black; padding: 6px; }
-input { width: 50px; text-align: center; }
-button { padding: 10px 20px; margin-top: 20px; }
-.sum { background-color: yellow; font-weight: bold; }
+body{font-family:Arial;text-align:center}
+table{border-collapse:collapse;margin:auto;width:95%}
+th,td{border:1px solid black;padding:5px;text-align:center}
+input{width:60px;text-align:center}
+
+.hidden{display:none}
+.note{color:red;font-weight:bold;margin:15px}
+.result{background:yellow;font-weight:bold}
 </style>
 </head>
 
@@ -18,139 +20,122 @@ button { padding: 10px 20px; margin-top: 20px; }
 
 <h2>寒带冬季野外生存练习 答题卡</h2>
 
-团队编号: <input id="group">
-姓名: <input id="name">
+<p>
+你的团队编号：<input id="team">
+你的姓名：<input id="name">
+</p>
 
-<br><br>
+<p class="note">
+请先完成第1–3步后再点击 “计算结果”<br>
+Please complete Steps 1–3 before clicking "Calculate Results"
+</p>
 
-<table id="table">
+<table>
 <thead>
 <tr>
 <th>物品</th>
 <th>第1步<br>个人排序</th>
 <th>第2步<br>团队排序</th>
 <th>第3步<br>个人排序</th>
-<th>专家排序</th>
-<th>第4步<br>|1-专家|</th>
-<th>第5步<br>|2-专家|</th>
-<th>第6步<br>|3-专家|</th>
+<th class="hidden resultPart">专家排序</th>
+<th class="hidden resultPart">第4步</th>
+<th class="hidden resultPart">第5步</th>
+<th class="hidden resultPart">第6步</th>
 </tr>
 </thead>
-<tbody></tbody>
+
+<tbody id="tableBody"></tbody>
+
+<tr class="hidden resultPart">
+<td colspan="4">排序差值总和 (值越低越好)</td>
+<td></td>
+<td class="result" id="sum4"></td>
+<td class="result" id="sum5"></td>
+<td class="result" id="sum6"></td>
+</tr>
+
 </table>
 
 <br>
 <button onclick="calculate()">计算结果</button>
-<button onclick="submitData()">提交结果</button>
-
-<h3>
-第4步总和: <span id="sum4">0</span>　
-第5步总和: <span id="sum5">0</span>　
-第6步总和: <span id="sum6">0</span>
-</h3>
+<button onclick="submitData()">提交数据</button>
 
 <script>
 
-const items = [
-"一团粗毛线",
-"一柄手斧",
-"一支满匣子弹的手枪",
-"金属大罐装固体黄油",
-"报纸（每人一份）",
-"一只打火机（已经没油了）",
-"防寒衣物（每人一套）",
-"一块20英尺×20英尺的厚帆布",
-"塑料制成的航空地图",
-"一升高酒精含量的威士忌",
-"一个指南针",
-"家庭装的巧克力棒（每人一份）"
+const items=[
+["一团粗毛线",2],
+["一柄手斧",6],
+["一支满匣子弹的手枪",9],
+["金属大罐装固体黄油",4],
+["报纸（每人一份）",8],
+["一只打火机（已经没油了）",1],
+["防寒衣物（每人一套）",3],
+["一块20英尺×20英尺的厚帆布",5],
+["塑料制成的航空地图",12],
+["一升高酒精含量的威士忌",10],
+["一个指南针",11],
+["家庭装的巧克力棒（每人一份）",7]
 ];
 
-const expert = [2,6,9,4,8,1,3,5,12,10,11,7];
+const body=document.getElementById("tableBody");
 
-const tbody = document.querySelector("#table tbody");
-
-items.forEach((item, i) => {
-
-let row = document.createElement("tr");
-
-row.innerHTML = `
-<td>${item}</td>
-<td><input></td>
-<td><input></td>
-<td><input></td>
-<td>${expert[i]}</td>
-<td class="c4">0</td>
-<td class="c5">0</td>
-<td class="c6">0</td>
-`;
-
-tbody.appendChild(row);
+items.forEach((item,i)=>{
+let row=`<tr>
+<td>${item[0]}</td>
+<td><input id="s1_${i}"></td>
+<td><input id="s2_${i}"></td>
+<td><input id="s3_${i}"></td>
+<td class="hidden resultPart">${item[1]}</td>
+<td class="hidden resultPart" id="r4_${i}"></td>
+<td class="hidden resultPart" id="r5_${i}"></td>
+<td class="hidden resultPart" id="r6_${i}"></td>
+</tr>`;
+body.innerHTML+=row;
 });
 
 function calculate(){
 
-let rows = tbody.querySelectorAll("tr");
-let sum4=0, sum5=0, sum6=0;
+let sum4=0,sum5=0,sum6=0;
 
-rows.forEach((row,i)=>{
+items.forEach((item,i)=>{
+let expert=item[1];
+let s1=Math.abs((document.getElementById(`s1_${i}`).value||0)-expert);
+let s2=Math.abs((document.getElementById(`s2_${i}`).value||0)-expert);
+let s3=Math.abs((document.getElementById(`s3_${i}`).value||0)-expert);
 
-let s1 = parseInt(row.children[1].children[0].value)||0;
-let s2 = parseInt(row.children[2].children[0].value)||0;
-let s3 = parseInt(row.children[3].children[0].value)||0;
-let exp = expert[i];
+document.getElementById(`r4_${i}`).innerText=s1;
+document.getElementById(`r5_${i}`).innerText=s2;
+document.getElementById(`r6_${i}`).innerText=s3;
 
-let d4 = Math.abs(s1-exp);
-let d5 = Math.abs(s2-exp);
-let d6 = Math.abs(s3-exp);
-
-row.children[5].innerText = d4;
-row.children[6].innerText = d5;
-row.children[7].innerText = d6;
-
-sum4 += d4;
-sum5 += d5;
-sum6 += d6;
-
+sum4+=s1;
+sum5+=s2;
+sum6+=s3;
 });
 
 document.getElementById("sum4").innerText=sum4;
 document.getElementById("sum5").innerText=sum5;
 document.getElementById("sum6").innerText=sum6;
 
+document.querySelectorAll(".resultPart").forEach(el=>el.classList.remove("hidden"));
 }
 
 function submitData(){
 
-let group = document.getElementById("group").value;
-let name = document.getElementById("name").value;
-
-let rows = tbody.querySelectorAll("tr");
-let rawData=[];
-
-rows.forEach((row,i)=>{
-rawData.push({
-index:i,
-step1:row.children[1].children[0].value,
-step2:row.children[2].children[0].value,
-step3:row.children[3].children[0].value
-});
-});
-
-fetch("https://script.google.com/macros/s/AKfycbye4scYnZgCrgaOlyrK4AFRzb0E4suq65xHIdcsgrAAvVnmUqh2_9bjvwvh8qEnsdtf/exec",{
-method:"POST",
-body:JSON.stringify({
-group:group,
-name:name,
-rawData:rawData,
+let data={
+team:document.getElementById("team").value,
+name:document.getElementById("name").value,
 sum4:document.getElementById("sum4").innerText,
 sum5:document.getElementById("sum5").innerText,
 sum6:document.getElementById("sum6").innerText
+};
+
+fetch("https://script.google.com/macros/s/AKfycbxmCCKKMlv5NEPv8r7FoVVtw83V-YYQh6yzGSmW0-e8_QgHsOW4PeTpBMXkwDe2903OiQ/exec",{
+method:"POST",
+body:JSON.stringify(data),
+headers:{"Content-Type":"application/json"}
 })
-});
-
-alert("提交成功");
-
+.then(res=>alert("提交成功"))
+.catch(err=>alert("提交失败"));
 }
 
 </script>
