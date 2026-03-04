@@ -119,6 +119,7 @@ document.getElementById("sum6").innerText=sum6;
 document.querySelectorAll(".resultPart").forEach(el=>el.classList.remove("hidden"));
 }
 
+
 function submitData(){
 
 let data={
@@ -131,14 +132,10 @@ sum6:document.getElementById("sum6").innerText
 
 fetch("https://script.google.com/macros/s/AKfycbxmCCKKMlv5NEPv8r7FoVVtw83V-YYQh6yzGSmW0-e8_QgHsOW4PeTpBMXkwDe2903OiQ/exec",{
 method:"POST",
-body:JSON.stringify(data),
-headers:{"Content-Type":"application/json"}
+mode:"no-cors",
+body:JSON.stringify(data)
 })
-.then(res=>alert("提交成功"))
-.catch(err=>alert("提交失败"));
+.then(()=>alert("提交成功"))
+.catch(()=>alert("提交失败"));
+
 }
-
-</script>
-
-</body>
-</html>
