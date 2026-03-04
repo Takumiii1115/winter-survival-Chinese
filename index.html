@@ -6,7 +6,7 @@
 <style>
 body { font-family: Arial, sans-serif; margin:30px; background:#f9f9f9;}
 h2 { text-align:center; margin-bottom:10px; color:#2c3e50;}
-.hint { text-align:center; color:#d9534f; font-weight:bold; margin-bottom:20px;}
+.hint { text-align:center; color:#d9534f; font-weight:bold; margin-bottom:20px; font-size:16px;}
 label { font-size:18px; font-weight:bold; margin-right:10px;}
 input.text-input { font-size:18px; padding:5px 10px; margin-bottom:15px; width:200px;}
 table { width:100%; border-collapse:collapse; background:white; margin-top:20px;}
@@ -18,12 +18,16 @@ input.rank-input { width:60px; text-align:center; font-size:16px; padding:5px;}
 button { margin-top:20px; font-size:18px; padding:10px 20px; background:#4285f4; color:white; border:none; border-radius:6px; cursor:pointer; margin-right:10px;}
 button:hover { background:#2a63c7;}
 .sum-cell { background:#fff8b3; font-weight:bold; font-size:16px;}
-.note-cell { text-align:right; font-weight:bold; background:#f8f9fa;}
+.note-cell { text-align:right; font-weight:bold; background:#f8f9fa; font-size:16px;}
 .step-header { background:#e3f2fd; font-weight:bold;}
 .score-header { background:#fff3e0; font-weight:bold;}
-.hidden-col { display:none;}
 tr:nth-child(even) { background:#fafafa;}
 tr:hover { background:#f0f7ff;}
+
+/* 初始隐藏列 */
+.hidden-col { display: none; }
+/* 计算后显示 */
+.show-col { display: table-cell; }
 </style>
 </head>
 <body>
@@ -32,39 +36,31 @@ tr:hover { background:#f0f7ff;}
 <div id="hint" class="hint">👉 请先完成第1-3步的排序，然后点击"计算结果"</div>
 
 <label>你的团队编号：</label>
-<input id="group" class="text-input"><br>
+<input id="group" class="text-input" placeholder="请输入小组编号"><br>
 
 <label>你的姓名：</label>
-<input id="name" class="text-input"><br>
+<input id="name" class="text-input" placeholder="请输入姓名"><br>
 
 <table id="score-table">
-<tr>
-<th rowspan="2" style="width:25%;">物品</th>
-<th colspan="1" class="step-header">第1步</th>
-<th colspan="1" class="step-header">第2步</th>
-<th colspan="1" class="step-header">第3步</th>
-<th rowspan="2" style="width:8%;">专家排序</th>
-<th colspan="1" class="score-header">第4步</th>
-<th colspan="1" class="score-header">第5步</th>
-<th colspan="1" class="score-header">第6步</th>
-</tr>
-<tr>
-<th style="width:10%;">个人排序<br><small>(团队讨论前)</small></th>
-<th style="width:10%;">团队排序<br><small>(团队讨论一致的排序结果)</small></th>
-<th style="width:10%;">个人排序<br><small>(团队讨论之后)</small></th>
-<th style="width:10%;">个人得分<br><small>|1-专家|</small></th>
-<th style="width:10%;">团队得分<br><small>|2-专家|</small></th>
-<th style="width:10%;">个人得分<br><small>|3-专家|</small></th>
+<tr id="header-row">
+<th style="width:30%;">物品</th>
+<th style="width:15%;" class="step-header">第1步<br>个人排序<br><small>(团队讨论前)</small></th>
+<th style="width:15%;" class="step-header">第2步<br>团队排序<br><small>(讨论后一致结果)</small></th>
+<th style="width:15%;" class="step-header">第3步<br>个人排序<br><small>(团队讨论之后)</small></th>
+<th style="width:10%; display:none;" class="expert-col hidden-col">专家排序</th>
+<th style="width:10%; display:none;" class="score-col hidden-col">第4步<br>个人得分<br><small>|1-专家|</small></th>
+<th style="width:10%; display:none;" class="score-col hidden-col">第5步<br>团队得分<br><small>|2-专家|</small></th>
+<th style="width:10%; display:none;" class="score-col hidden-col">第6步<br>个人得分<br><small>|3-专家|</small></th>
 </tr>
 </table>
 
 <button onclick="calc()">计算结果</button>
-<button onclick="submitData()">提交结果</button>
+<button onclick="submitData()" id="submitBtn" style="display:none;">提交结果</button>
 
 <script>
 
-// 冬季野外生存物品列表（中英文对照）
-const itemsCN = [
+// 冬季野外生存物品列表（仅中文）
+const items = [
 "一团粗毛线",
 "一柄手斧",
 "一支满匣子弹的手枪",
@@ -79,42 +75,29 @@ const itemsCN = [
 "家庭装的巧克力棒（每人一份）"
 ];
 
-const itemsEN = [
-"Ball of Heavy String",
-"Hand Axe",
-"Pistol (loaded)",
-"Can of Solid Butter (large, metal)",
-"Newspaper (one per person)",
-"Lighter (out of fuel)",
-"Winter Clothing (one set per person)",
-"Tarp (20ft x 20ft heavy canvas)",
-"Plastic Aeronautical Map",
-"Bottle of High-Proof Whiskey (1 liter)",
-"Compass",
-"Family-Size Chocolate Bars (one per person)"
-];
-
-// 专家排序（根据你提供的Excel数据）
+// 专家排序
 const expert = [2, 6, 9, 4, 8, 1, 3, 5, 12, 10, 11, 7];
 
 const table = document.getElementById("score-table");
+let calculated = false;
 
-itemsEN.forEach((item, i) => {
+// 初始化表格
+items.forEach((item, i) => {
 const tr = document.createElement("tr");
 tr.innerHTML = `
-<td style="text-align:left; padding-left:15px;"><strong>${item}</strong><br><small style="color:#666;">${itemsCN[i]}</small></td>
-<td><input id="p1-${i}" class="rank-input" placeholder="1-12"></td>
-<td><input id="p2-${i}" class="rank-input" placeholder="1-12"></td>
-<td><input id="p3-${i}" class="rank-input" placeholder="1-12"></td>
-<td id="exp-${i}" class="expert">${expert[i]}</td>
-<td id="s4-${i}" class="hidden-col" style="background:#fff8b3;"></td>
-<td id="s5-${i}" class="hidden-col" style="background:#fff8b3;"></td>
-<td id="s6-${i}" class="hidden-col" style="background:#fff8b3;"></td>
+<td style="text-align:left; padding-left:15px; font-weight:bold;">${item}</td>
+<td><input id="p1-${i}" class="rank-input" placeholder="1-12" min="1" max="12"></td>
+<td><input id="p2-${i}" class="rank-input" placeholder="1-12" min="1" max="12"></td>
+<td><input id="p3-${i}" class="rank-input" placeholder="1-12" min="1" max="12"></td>
+<td id="exp-${i}" class="expert hidden-col expert-col" style="display:none;">${expert[i]}</td>
+<td id="s4-${i}" class="hidden-col score-col" style="background:#fff8b3; display:none;"></td>
+<td id="s5-${i}" class="hidden-col score-col" style="background:#fff8b3; display:none;"></td>
+<td id="s6-${i}" class="hidden-col score-col" style="background:#fff8b3; display:none;"></td>
 `;
 table.appendChild(tr);
 });
 
-// 添加总计行
+// 添加总计行（初始隐藏）
 const sumRow = document.createElement("tr");
 sumRow.id = "sum-row";
 sumRow.style.display = "none";
@@ -122,41 +105,44 @@ sumRow.innerHTML = `
 <td class="note-cell" colspan="4" style="font-size:16px; padding-right:20px;">
 请计算第4、5、6三步的排序差值总和 (值越低越好) →
 </td>
-<td style="background:#e8f5e9; font-weight:bold;">-</td>
-<td id="sum4" class="sum-cell" style="font-size:18px; color:#d32f2f;"></td>
-<td id="sum5" class="sum-cell" style="font-size:18px; color:#d32f2f;"></td>
-<td id="sum6" class="sum-cell" style="font-size:18px; color:#d32f2f;"></td>
+<td class="hidden-col expert-col" style="display:none;">-</td>
+<td id="sum4" class="sum-cell hidden-col score-col" style="font-size:18px; color:#d32f2f; display:none;"></td>
+<td id="sum5" class="sum-cell hidden-col score-col" style="font-size:18px; color:#d32f2f; display:none;"></td>
+<td id="sum6" class="sum-cell hidden-col score-col" style="font-size:18px; color:#d32f2f; display:none;"></td>
 `;
 table.appendChild(sumRow);
 
 function calc(){
 let total4=0, total5=0, total6=0;
 let valid = true;
+let emptyFields = [];
 
-itemsCN.forEach((_, i) => {
-let p1 = document.getElementById(`p1-${i}`).value;
-let p2 = document.getElementById(`p2-${i}`).value;
-let p3 = document.getElementById(`p3-${i}`).value;
+// 验证所有字段
+items.forEach((_, i) => {
+let p1 = document.getElementById(`p1-${i}`).value.trim();
+let p2 = document.getElementById(`p2-${i}`).value.trim();
+let p3 = document.getElementById(`p3-${i}`).value.trim();
 
 if(!p1 || !p2 || !p3) {
 valid = false;
+emptyFields.push(i+1);
 return;
 }
 
 p1 = Number(p1);
 p2 = Number(p2);
 p3 = Number(p3);
-let exp = expert[i];
 
 // 验证输入范围
-if(p1 < 1 || p1 > 12 || p2 < 1 || p2 > 12 || p3 < 1 || p3 > 12) {
+if(isNaN(p1) || isNaN(p2) || isNaN(p3) || p1 < 1 || p1 > 12 || p2 < 1 || p2 > 12 || p3 < 1 || p3 > 12) {
 valid = false;
 return;
 }
 
-let v4 = Math.abs(p1 - exp);  // 第4步：|第1步 - 专家|
-let v5 = Math.abs(p2 - exp);  // 第5步：|第2步 - 专家|
-let v6 = Math.abs(p3 - exp);  // 第6步：|第3步 - 专家|
+let exp = expert[i];
+let v4 = Math.abs(p1 - exp);
+let v5 = Math.abs(p2 - exp);
+let v6 = Math.abs(p3 - exp);
 
 document.getElementById(`s4-${i}`).innerText = v4;
 document.getElementById(`s5-${i}`).innerText = v5;
@@ -168,26 +154,41 @@ total6 += v6;
 });
 
 if(!valid) {
-alert("请确保所有物品都已填写1-12的有效排序数字！");
+if(emptyFields.length > 0) {
+alert(`请填写所有物品的排序！缺少第 ${emptyFields.join(', ')} 个物品的排序。`);
+} else {
+alert("请确保所有排序数字都在1-12之间！");
+}
 return;
 }
 
+// 显示总和
 document.getElementById("sum4").innerText = total4;
 document.getElementById("sum5").innerText = total5;
 document.getElementById("sum6").innerText = total6;
 
-// 显示隐藏的列和总计行
+// 显示隐藏的列
 document.querySelectorAll(".hidden-col").forEach(el => {
 el.style.display = "table-cell";
 });
 document.getElementById("sum-row").style.display = "table-row";
-document.getElementById("hint").style.display = "none";
 
-// 滚动到表格底部查看结果
+// 隐藏提示，显示提交按钮
+document.getElementById("hint").style.display = "none";
+document.getElementById("submitBtn").style.display = "inline-block";
+
+calculated = true;
+
+// 滚动到表格底部
 document.getElementById("sum-row").scrollIntoView({ behavior: 'smooth' });
 }
 
 function submitData(){
+if(!calculated) {
+alert("请先点击'计算结果'按钮！");
+return;
+}
+
 const group = document.getElementById("group").value.trim();
 const name = document.getElementById("name").value.trim();
 
@@ -196,56 +197,75 @@ alert("请输入团队编号和姓名！");
 return;
 }
 
-// 检查是否已计算
-if(document.getElementById("hint").style.display !== "none"){
-alert("请先点击'计算结果'按钮！");
-return;
-}
-
-const rawData = [];
-itemsCN.forEach((item, i) => {
-rawData.push({
-item: item,
-step1: document.getElementById(`p1-${i}`).value,
-step2: document.getElementById(`p2-${i}`).value,
-step3: document.getElementById(`p3-${i}`).value
-});
-});
-
-const calculatedData = [];
-itemsCN.forEach((item, i) => {
-calculatedData.push({
-item: item,
-expert: expert[i],
-step4: document.getElementById(`s4-${i}`).innerText,
-step5: document.getElementById(`s5-${i}`).innerText,
-step6: document.getElementById(`s6-${i}`).innerText
-});
-});
-
+// 构建数据对象
 const payload = {
 group: group,
 name: name,
-rawData: rawData,
-calculatedData: calculatedData,
-sum4: document.getElementById("sum4").innerText,
-sum5: document.getElementById("sum5").innerText,
-sum6: document.getElementById("sum6").innerText,
 timestamp: new Date().toISOString()
 };
 
-// 这里替换为你的Google Apps Script URL
-fetch("https://script.google.com/macros/s/AKfycbxmCCKKMlv5NEPv8r7FoVVtw83V-YYQh6yzGSmW0-e8_QgHsOW4PeTpBMXkwDe2903OiQ/exec", {
+// 添加每个物品的数据
+items.forEach((item, i) => {
+payload[`item${i}_name`] = item;
+payload[`item${i}_step1`] = document.getElementById(`p1-${i}`).value;
+payload[`item${i}_step2`] = document.getElementById(`p2-${i}`).value;
+payload[`item${i}_step3`] = document.getElementById(`p3-${i}`).value;
+payload[`item${i}_expert`] = expert[i];
+payload[`item${i}_score4`] = document.getElementById(`s4-${i}`).innerText;
+payload[`item${i}_score5`] = document.getElementById(`s5-${i}`).innerText;
+payload[`item${i}_score6`] = document.getElementById(`s6-${i}`).innerText;
+});
+
+// 添加总和
+payload.sum4 = document.getElementById("sum4").innerText;
+payload.sum5 = document.getElementById("sum5").innerText;
+payload.sum6 = document.getElementById("sum6").innerText;
+
+console.log("Sending data:", payload);
+
+// 使用Image对象方式提交（避免CORS问题）
+const scriptUrl = "https://script.google.com/macros/s/AKfycbxmCCKKMlv5NEPv8r7FoVVtw83V-YYQh6yzGSmW0-e8_QgHsOW4PeTpBMXkwDe2903OiQ/exec"; // 替换为你的脚本URL
+
+// 方法1：使用fetch with no-cors
+fetch(scriptUrl, {
 method: "POST",
-body: JSON.stringify(payload),
-mode: "no-cors"
+mode: "no-cors",
+headers: {
+"Content-Type": "application/json",
+},
+body: JSON.stringify(payload)
 })
 .then(() => {
+// no-cors模式下无法读取响应，假设成功
 alert("提交成功！😊");
+document.getElementById("submitBtn").disabled = true;
+document.getElementById("submitBtn").innerText = "已提交";
 })
-.catch(() => {
-alert("提交失败，请检查网络连接。");
+.catch((error) => {
+console.error("Error:", error);
+alert("提交失败，请检查网络连接或联系管理员。\n错误: " + error.message);
 });
+
+// 备用方法2：如果上面的不行，取消下面的注释使用GET方式
+/*
+const params = new URLSearchParams();
+for(let key in payload) {
+params.append(key, payload[key]);
+}
+const img = new Image();
+img.onload = function() {
+alert("提交成功！😊");
+document.getElementById("submitBtn").disabled = true;
+document.getElementById("submitBtn").innerText = "已提交";
+};
+img.onerror = function() {
+// 图片加载错误通常也意味着请求已发送（因为会跨域）
+alert("提交成功！😊");
+document.getElementById("submitBtn").disabled = true;
+document.getElementById("submitBtn").innerText = "已提交";
+};
+img.src = scriptUrl + "?" + params.toString();
+*/
 }
 </script>
 
