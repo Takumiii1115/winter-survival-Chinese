@@ -2,140 +2,252 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>寒带冬季野外生存练习 答题卡</title>
-
+<title>Winter Survival Scorecard</title>
 <style>
-body{font-family:Arial;text-align:center}
-table{border-collapse:collapse;margin:auto;width:95%}
-th,td{border:1px solid black;padding:5px;text-align:center}
-input{width:60px;text-align:center}
-
-.hidden{display:none}
-.note{color:red;font-weight:bold;margin:15px}
-.result{background:yellow;font-weight:bold}
+body { font-family: Arial, sans-serif; margin:30px; background:#f9f9f9;}
+h2 { text-align:center; margin-bottom:10px; color:#2c3e50;}
+.hint { text-align:center; color:#d9534f; font-weight:bold; margin-bottom:20px;}
+label { font-size:18px; font-weight:bold; margin-right:10px;}
+input.text-input { font-size:18px; padding:5px 10px; margin-bottom:15px; width:200px;}
+table { width:100%; border-collapse:collapse; background:white; margin-top:20px;}
+th,td { border:1px solid #ccc; padding:10px; text-align:center;}
+th { background:#f0f0f0; font-size:14px;}
+td { font-size:15px;}
+input.rank-input { width:60px; text-align:center; font-size:16px; padding:5px;}
+.expert { color:red; font-weight:bold; background:#ffe6e6;}
+button { margin-top:20px; font-size:18px; padding:10px 20px; background:#4285f4; color:white; border:none; border-radius:6px; cursor:pointer; margin-right:10px;}
+button:hover { background:#2a63c7;}
+.sum-cell { background:#fff8b3; font-weight:bold; font-size:16px;}
+.note-cell { text-align:right; font-weight:bold; background:#f8f9fa;}
+.step-header { background:#e3f2fd; font-weight:bold;}
+.score-header { background:#fff3e0; font-weight:bold;}
+.hidden-col { display:none;}
+tr:nth-child(even) { background:#fafafa;}
+tr:hover { background:#f0f7ff;}
 </style>
 </head>
-
 <body>
 
-<h2>寒带冬季野外生存练习 答题卡</h2>
+<h2>❄️ Winter Survival Individual Scorecard ❄️</h2>
+<div id="hint" class="hint">👉 请先完成第1-3步的排序，然后点击"计算结果"</div>
 
-<p>
-你的团队编号：<input id="team">
-你的姓名：<input id="name">
-</p>
+<label>你的团队编号：</label>
+<input id="group" class="text-input"><br>
 
-<p class="note">
-请先完成第1–3步后再点击 “计算结果”<br>
-Please complete Steps 1–3 before clicking "Calculate Results"
-</p>
+<label>你的姓名：</label>
+<input id="name" class="text-input"><br>
 
-<table>
-<thead>
+<table id="score-table">
 <tr>
-<th>物品</th>
-<th>第1步<br>个人排序</th>
-<th>第2步<br>团队排序</th>
-<th>第3步<br>个人排序</th>
-<th class="hidden resultPart">专家排序</th>
-<th class="hidden resultPart">第4步</th>
-<th class="hidden resultPart">第5步</th>
-<th class="hidden resultPart">第6步</th>
+<th rowspan="2" style="width:25%;">物品</th>
+<th colspan="1" class="step-header">第1步</th>
+<th colspan="1" class="step-header">第2步</th>
+<th colspan="1" class="step-header">第3步</th>
+<th rowspan="2" style="width:8%;">专家排序</th>
+<th colspan="1" class="score-header">第4步</th>
+<th colspan="1" class="score-header">第5步</th>
+<th colspan="1" class="score-header">第6步</th>
 </tr>
-</thead>
-
-<tbody id="tableBody"></tbody>
-
-<tr class="hidden resultPart">
-<td colspan="4">排序差值总和 (值越低越好)</td>
-<td></td>
-<td class="result" id="sum4"></td>
-<td class="result" id="sum5"></td>
-<td class="result" id="sum6"></td>
+<tr>
+<th style="width:10%;">个人排序<br><small>(团队讨论前)</small></th>
+<th style="width:10%;">团队排序<br><small>(团队讨论一致的排序结果)</small></th>
+<th style="width:10%;">个人排序<br><small>(团队讨论之后)</small></th>
+<th style="width:10%;">个人得分<br><small>|1-专家|</small></th>
+<th style="width:10%;">团队得分<br><small>|2-专家|</small></th>
+<th style="width:10%;">个人得分<br><small>|3-专家|</small></th>
 </tr>
-
 </table>
 
-<br>
-<button onclick="calculate()">计算结果</button>
-<button onclick="submitData()">提交数据</button>
+<button onclick="calc()">计算结果</button>
+<button onclick="submitData()">提交结果</button>
 
 <script>
 
-const items=[
-["一团粗毛线",2],
-["一柄手斧",6],
-["一支满匣子弹的手枪",9],
-["金属大罐装固体黄油",4],
-["报纸（每人一份）",8],
-["一只打火机（已经没油了）",1],
-["防寒衣物（每人一套）",3],
-["一块20英尺×20英尺的厚帆布",5],
-["塑料制成的航空地图",12],
-["一升高酒精含量的威士忌",10],
-["一个指南针",11],
-["家庭装的巧克力棒（每人一份）",7]
+// 冬季野外生存物品列表（中英文对照）
+const itemsCN = [
+"一团粗毛线",
+"一柄手斧",
+"一支满匣子弹的手枪",
+"金属大罐装固体黄油",
+"报纸（每人一份）",
+"一只打火机（已经没油了）",
+"防寒衣物（每人一套）",
+"一块20英尺×20英尺的厚帆布",
+"塑料制成的航空地图",
+"一升高酒精含量的威士忌",
+"一个指南针",
+"家庭装的巧克力棒（每人一份）"
 ];
 
-const body=document.getElementById("tableBody");
+const itemsEN = [
+"Ball of Heavy String",
+"Hand Axe",
+"Pistol (loaded)",
+"Can of Solid Butter (large, metal)",
+"Newspaper (one per person)",
+"Lighter (out of fuel)",
+"Winter Clothing (one set per person)",
+"Tarp (20ft x 20ft heavy canvas)",
+"Plastic Aeronautical Map",
+"Bottle of High-Proof Whiskey (1 liter)",
+"Compass",
+"Family-Size Chocolate Bars (one per person)"
+];
 
-items.forEach((item,i)=>{
-let row=`<tr>
-<td>${item[0]}</td>
-<td><input id="s1_${i}"></td>
-<td><input id="s2_${i}"></td>
-<td><input id="s3_${i}"></td>
-<td class="hidden resultPart">${item[1]}</td>
-<td class="hidden resultPart" id="r4_${i}"></td>
-<td class="hidden resultPart" id="r5_${i}"></td>
-<td class="hidden resultPart" id="r6_${i}"></td>
-</tr>`;
-body.innerHTML+=row;
+// 专家排序（根据你提供的Excel数据）
+const expert = [2, 6, 9, 4, 8, 1, 3, 5, 12, 10, 11, 7];
+
+const table = document.getElementById("score-table");
+
+itemsEN.forEach((item, i) => {
+const tr = document.createElement("tr");
+tr.innerHTML = `
+<td style="text-align:left; padding-left:15px;"><strong>${item}</strong><br><small style="color:#666;">${itemsCN[i]}</small></td>
+<td><input id="p1-${i}" class="rank-input" placeholder="1-12"></td>
+<td><input id="p2-${i}" class="rank-input" placeholder="1-12"></td>
+<td><input id="p3-${i}" class="rank-input" placeholder="1-12"></td>
+<td id="exp-${i}" class="expert">${expert[i]}</td>
+<td id="s4-${i}" class="hidden-col" style="background:#fff8b3;"></td>
+<td id="s5-${i}" class="hidden-col" style="background:#fff8b3;"></td>
+<td id="s6-${i}" class="hidden-col" style="background:#fff8b3;"></td>
+`;
+table.appendChild(tr);
 });
 
-function calculate(){
+// 添加总计行
+const sumRow = document.createElement("tr");
+sumRow.id = "sum-row";
+sumRow.style.display = "none";
+sumRow.innerHTML = `
+<td class="note-cell" colspan="4" style="font-size:16px; padding-right:20px;">
+请计算第4、5、6三步的排序差值总和 (值越低越好) →
+</td>
+<td style="background:#e8f5e9; font-weight:bold;">-</td>
+<td id="sum4" class="sum-cell" style="font-size:18px; color:#d32f2f;"></td>
+<td id="sum5" class="sum-cell" style="font-size:18px; color:#d32f2f;"></td>
+<td id="sum6" class="sum-cell" style="font-size:18px; color:#d32f2f;"></td>
+`;
+table.appendChild(sumRow);
 
-let sum4=0,sum5=0,sum6=0;
+function calc(){
+let total4=0, total5=0, total6=0;
+let valid = true;
 
-items.forEach((item,i)=>{
-let expert=item[1];
-let s1=Math.abs((document.getElementById(`s1_${i}`).value||0)-expert);
-let s2=Math.abs((document.getElementById(`s2_${i}`).value||0)-expert);
-let s3=Math.abs((document.getElementById(`s3_${i}`).value||0)-expert);
+itemsCN.forEach((_, i) => {
+let p1 = document.getElementById(`p1-${i}`).value;
+let p2 = document.getElementById(`p2-${i}`).value;
+let p3 = document.getElementById(`p3-${i}`).value;
 
-document.getElementById(`r4_${i}`).innerText=s1;
-document.getElementById(`r5_${i}`).innerText=s2;
-document.getElementById(`r6_${i}`).innerText=s3;
-
-sum4+=s1;
-sum5+=s2;
-sum6+=s3;
-});
-
-document.getElementById("sum4").innerText=sum4;
-document.getElementById("sum5").innerText=sum5;
-document.getElementById("sum6").innerText=sum6;
-
-document.querySelectorAll(".resultPart").forEach(el=>el.classList.remove("hidden"));
+if(!p1 || !p2 || !p3) {
+valid = false;
+return;
 }
 
+p1 = Number(p1);
+p2 = Number(p2);
+p3 = Number(p3);
+let exp = expert[i];
+
+// 验证输入范围
+if(p1 < 1 || p1 > 12 || p2 < 1 || p2 > 12 || p3 < 1 || p3 > 12) {
+valid = false;
+return;
+}
+
+let v4 = Math.abs(p1 - exp);  // 第4步：|第1步 - 专家|
+let v5 = Math.abs(p2 - exp);  // 第5步：|第2步 - 专家|
+let v6 = Math.abs(p3 - exp);  // 第6步：|第3步 - 专家|
+
+document.getElementById(`s4-${i}`).innerText = v4;
+document.getElementById(`s5-${i}`).innerText = v5;
+document.getElementById(`s6-${i}`).innerText = v6;
+
+total4 += v4;
+total5 += v5;
+total6 += v6;
+});
+
+if(!valid) {
+alert("请确保所有物品都已填写1-12的有效排序数字！");
+return;
+}
+
+document.getElementById("sum4").innerText = total4;
+document.getElementById("sum5").innerText = total5;
+document.getElementById("sum6").innerText = total6;
+
+// 显示隐藏的列和总计行
+document.querySelectorAll(".hidden-col").forEach(el => {
+el.style.display = "table-cell";
+});
+document.getElementById("sum-row").style.display = "table-row";
+document.getElementById("hint").style.display = "none";
+
+// 滚动到表格底部查看结果
+document.getElementById("sum-row").scrollIntoView({ behavior: 'smooth' });
+}
 
 function submitData(){
+const group = document.getElementById("group").value.trim();
+const name = document.getElementById("name").value.trim();
 
-let data={
-team:document.getElementById("team").value,
-name:document.getElementById("name").value,
-sum4:document.getElementById("sum4").innerText,
-sum5:document.getElementById("sum5").innerText,
-sum6:document.getElementById("sum6").innerText
+if(!group || !name){
+alert("请输入团队编号和姓名！");
+return;
+}
+
+// 检查是否已计算
+if(document.getElementById("hint").style.display !== "none"){
+alert("请先点击'计算结果'按钮！");
+return;
+}
+
+const rawData = [];
+itemsCN.forEach((item, i) => {
+rawData.push({
+item: item,
+step1: document.getElementById(`p1-${i}`).value,
+step2: document.getElementById(`p2-${i}`).value,
+step3: document.getElementById(`p3-${i}`).value
+});
+});
+
+const calculatedData = [];
+itemsCN.forEach((item, i) => {
+calculatedData.push({
+item: item,
+expert: expert[i],
+step4: document.getElementById(`s4-${i}`).innerText,
+step5: document.getElementById(`s5-${i}`).innerText,
+step6: document.getElementById(`s6-${i}`).innerText
+});
+});
+
+const payload = {
+group: group,
+name: name,
+rawData: rawData,
+calculatedData: calculatedData,
+sum4: document.getElementById("sum4").innerText,
+sum5: document.getElementById("sum5").innerText,
+sum6: document.getElementById("sum6").innerText,
+timestamp: new Date().toISOString()
 };
 
-fetch("https://script.google.com/macros/s/AKfycbxmCCKKMlv5NEPv8r7FoVVtw83V-YYQh6yzGSmW0-e8_QgHsOW4PeTpBMXkwDe2903OiQ/exec",{
-method:"POST",
-mode:"no-cors",
-body:JSON.stringify(data)
+// 这里替换为你的Google Apps Script URL
+fetch("https://script.google.com/macros/s/AKfycbxmCCKKMlv5NEPv8r7FoVVtw83V-YYQh6yzGSmW0-e8_QgHsOW4PeTpBMXkwDe2903OiQ/exec", {
+method: "POST",
+body: JSON.stringify(payload),
+mode: "no-cors"
 })
-.then(()=>alert("提交成功"))
-.catch(()=>alert("提交失败"));
-
+.then(() => {
+alert("提交成功！😊");
+})
+.catch(() => {
+alert("提交失败，请检查网络连接。");
+});
 }
+</script>
+
+</body>
+</html>
