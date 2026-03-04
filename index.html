@@ -9,8 +9,8 @@ h2 { text-align:center; margin-bottom:10px; color:#2c3e50;}
 .hint { text-align:center; color:#d9534f; font-weight:bold; margin-bottom:20px; font-size:16px;}
 label { font-size:18px; font-weight:bold; margin-right:10px;}
 input.text-input { font-size:18px; padding:5px 10px; margin-bottom:15px; width:200px;}
-table { width:100%; border-collapse:collapse; background:white; margin-top:20px;}
-th,td { border:1px solid #ccc; padding:10px; text-align:center;}
+table { width:100%; border-collapse:collapse; background:white; margin-top:20px; table-layout: fixed;}
+th,td { border:1px solid #ccc; padding:10px; text-align:center; word-wrap: break-word;}
 th { background:#f0f0f0; font-size:14px;}
 td { font-size:15px;}
 input.rank-input { width:60px; text-align:center; font-size:16px; padding:5px;}
@@ -28,6 +28,12 @@ tr:hover { background:#f0f7ff;}
 .hidden-col { display: none; }
 /* 计算后显示 */
 .show-col { display: table-cell; }
+
+/* 列宽定义 */
+.col-item { width: 22%; }
+.col-step { width: 13%; }
+.col-expert { width: 10%; min-width: 80px; }
+.col-score { width: 10%; min-width: 80px; }
 </style>
 </head>
 <body>
@@ -43,19 +49,22 @@ tr:hover { background:#f0f7ff;}
 
 <table id="score-table">
 <tr id="header-row">
-<th style="width:30%;">物品</th>
-<th style="width:15%;" class="step-header">第1步<br>个人排序<br><small>(团队讨论前)</small></th>
-<th style="width:15%;" class="step-header">第2步<br>团队排序<br><small>(讨论后一致结果)</small></th>
-<th style="width:15%;" class="step-header">第3步<br>个人排序<br><small>(团队讨论之后)</small></th>
-<th style="width:10%; display:none;" class="expert-col hidden-col">专家排序</th>
-<th style="width:10%; display:none;" class="score-col hidden-col">第4步<br>个人得分<br><small>|1-专家|</small></th>
-<th style="width:10%; display:none;" class="score-col hidden-col">第5步<br>团队得分<br><small>|2-专家|</small></th>
-<th style="width:10%; display:none;" class="score-col hidden-col">第6步<br>个人得分<br><small>|3-专家|</small></th>
+<th class="col-item">物品</th>
+<th class="col-step step-header">第1步<br>个人排序<br><small>(团队讨论前)</small></th>
+<th class="col-step step-header">第2步<br>团队排序<br><small>(讨论后一致结果)</small></th>
+<th class="col-step step-header">第3步<br>个人排序<br><small>(团队讨论之后)</small></th>
+<th class="col-expert hidden-col expert-col">专家排序</th>
+<th class="col-score hidden-col score-col">第4步<br>个人得分<br><small>|1-专家|</small></th>
+<th class="col-score hidden-col score-col">第5步<br>团队得分<br><small>|2-专家|</small></th>
+<th class="col-score hidden-col score-col">第6步<br>个人得分<br><small>|3-专家|</small></th>
 </tr>
 </table>
 
 <button onclick="calc()">计算结果</button>
 <button onclick="submitData()" id="submitBtn" style="display:none;">提交结果</button>
+<div id="submitHint" style="display:none; margin-top:15px; padding:10px; background:#e8f5e9; border-left:4px solid #4caf50; color:#2e7d32; font-weight:bold; font-size:16px;">
+✅ 计算完成！请检查得分后点击"提交结果"按钮提交数据
+</div>
 
 <script>
 
@@ -89,10 +98,10 @@ tr.innerHTML = `
 <td><input id="p1-${i}" class="rank-input" placeholder="1-12" min="1" max="12"></td>
 <td><input id="p2-${i}" class="rank-input" placeholder="1-12" min="1" max="12"></td>
 <td><input id="p3-${i}" class="rank-input" placeholder="1-12" min="1" max="12"></td>
-<td id="exp-${i}" class="expert hidden-col expert-col" style="display:none;">${expert[i]}</td>
-<td id="s4-${i}" class="hidden-col score-col" style="background:#fff8b3; display:none;"></td>
-<td id="s5-${i}" class="hidden-col score-col" style="background:#fff8b3; display:none;"></td>
-<td id="s6-${i}" class="hidden-col score-col" style="background:#fff8b3; display:none;"></td>
+<td id="exp-${i}" class="expert hidden-col expert-col">${expert[i]}</td>
+<td id="s4-${i}" class="hidden-col score-col" style="background:#fff8b3;"></td>
+<td id="s5-${i}" class="hidden-col score-col" style="background:#fff8b3;"></td>
+<td id="s6-${i}" class="hidden-col score-col" style="background:#fff8b3;"></td>
 `;
 table.appendChild(tr);
 });
@@ -105,10 +114,10 @@ sumRow.innerHTML = `
 <td class="note-cell" colspan="4" style="font-size:16px; padding-right:20px;">
 请计算第4、5、6三步的排序差值总和 (值越低越好) →
 </td>
-<td class="hidden-col expert-col" style="display:none;">-</td>
-<td id="sum4" class="sum-cell hidden-col score-col" style="font-size:18px; color:#d32f2f; display:none;"></td>
-<td id="sum5" class="sum-cell hidden-col score-col" style="font-size:18px; color:#d32f2f; display:none;"></td>
-<td id="sum6" class="sum-cell hidden-col score-col" style="font-size:18px; color:#d32f2f; display:none;"></td>
+<td class="hidden-col expert-col">-</td>
+<td id="sum4" class="sum-cell hidden-col score-col" style="font-size:18px; color:#d32f2f;"></td>
+<td id="sum5" class="sum-cell hidden-col score-col" style="font-size:18px; color:#d32f2f;"></td>
+<td id="sum6" class="sum-cell hidden-col score-col" style="font-size:18px; color:#d32f2f;"></td>
 `;
 table.appendChild(sumRow);
 
@@ -173,14 +182,17 @@ el.style.display = "table-cell";
 });
 document.getElementById("sum-row").style.display = "table-row";
 
-// 隐藏提示，显示提交按钮
+// 隐藏初始提示，显示提交按钮和提交提示
 document.getElementById("hint").style.display = "none";
 document.getElementById("submitBtn").style.display = "inline-block";
+document.getElementById("submitHint").style.display = "block";
 
 calculated = true;
 
 // 滚动到表格底部
+setTimeout(() => {
 document.getElementById("sum-row").scrollIntoView({ behavior: 'smooth' });
+}, 100);
 }
 
 function submitData(){
@@ -226,46 +238,26 @@ console.log("Sending data:", payload);
 // 使用Image对象方式提交（避免CORS问题）
 const scriptUrl = "https://script.google.com/macros/s/AKfycbxmCCKKMlv5NEPv8r7FoVVtw83V-YYQh6yzGSmW0-e8_QgHsOW4PeTpBMXkwDe2903OiQ/exec"; // 替换为你的脚本URL
 
-// 方法1：使用fetch with no-cors
-fetch(scriptUrl, {
-method: "POST",
-mode: "no-cors",
-headers: {
-"Content-Type": "application/json",
-},
-body: JSON.stringify(payload)
-})
-.then(() => {
-// no-cors模式下无法读取响应，假设成功
-alert("提交成功！😊");
-document.getElementById("submitBtn").disabled = true;
-document.getElementById("submitBtn").innerText = "已提交";
-})
-.catch((error) => {
-console.error("Error:", error);
-alert("提交失败，请检查网络连接或联系管理员。\n错误: " + error.message);
-});
-
-// 备用方法2：如果上面的不行，取消下面的注释使用GET方式
-/*
 const params = new URLSearchParams();
 for(let key in payload) {
 params.append(key, payload[key]);
 }
+
 const img = new Image();
 img.onload = function() {
 alert("提交成功！😊");
 document.getElementById("submitBtn").disabled = true;
 document.getElementById("submitBtn").innerText = "已提交";
+document.getElementById("submitHint").style.display = "none";
 };
 img.onerror = function() {
-// 图片加载错误通常也意味着请求已发送（因为会跨域）
+// 图片加载错误通常意味着请求已发送（跨域限制）
 alert("提交成功！😊");
 document.getElementById("submitBtn").disabled = true;
 document.getElementById("submitBtn").innerText = "已提交";
+document.getElementById("submitHint").style.display = "none";
 };
 img.src = scriptUrl + "?" + params.toString();
-*/
 }
 </script>
 
